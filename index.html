@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Рулетка</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #1e3a4c;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    user-select: none;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card {
+    width: 340px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 28px;
+    padding: 28px 24px 24px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    position: relative;
+    z-index: 10;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .title span {
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.3px;
+  }
+
+  .emoji {
+    font-size: 1.7rem;
+  }
+
+  .display {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .display::before,
+  .display::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 18px;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .display::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(30, 58, 76, 0.85), transparent);
+  }
+
+  .display::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(30, 58, 76, 0.85), transparent);
+  }
+
+  .reel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    transition: none;
+  }
+
+  .symbol {
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    padding: 0 12px;
+    line-height: 1.1;
+  }
+
+  .btn {
+    width: 100%;
+    height: 58px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(90deg, #00c6ff, #0072ff);
+    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 25px rgba(0, 114, 255, 0.35);
+    transition: all 0.2s ease;
+  }
+
+  .btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 114, 255, 0.45);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn .dice {
+    font-size: 1.3rem;
+  }
+
+  /* ===== ЭФФЕКТЫ ===== */
+
+  /* --- Йогурт (Спущенка) --- */
+  .yogurt-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+  }
+
+  .yogurt-drop {
+    position: absolute;
+    background: linear-gradient(180deg, #fff9f0, #f5e6c8);
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    opacity: 0.92;
+    box-shadow: 0 0 8px rgba(255, 250, 230, 0.6);
+    animation: yogurtFall linear forwards;
+  }
+
+  @keyframes yogurtFall {
+    0% {
+      transform: translateY(-40px) scale(1);
+      opacity: 0.95;
+    }
+    70% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: translateY(100vh) scale(1.1);
+      opacity: 0.7;
+    }
+  }
+
+  .yogurt-drip {
+    position: absolute;
+    width: 18px;
+    background: linear-gradient(180deg, #fff9f0, #f0e0b8);
+    border-radius: 0 0 12px 12px;
+    opacity: 0.85;
+    animation: dripGrow 2.8s ease-out forwards;
+    transform-origin: top center;
+  }
+
+  @keyframes dripGrow {
+    0% {
+      height: 0;
+      opacity: 0.9;
+    }
+    40% {
+      height: 80px;
+      opacity: 0.85;
+    }
+    100% {
+      height: 160px;
+      opacity: 0.5;
+    }
+  }
+
+  .yogurt-splash {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, #fff9f0 30%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0;
+    animation: splash 0.6s ease-out forwards;
+  }
+
+  @keyframes splash {
+    0% {
+      transform: scale(0.3);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  /* --- 67 (SIX SEVEN) --- */
+  .sixseven-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sixseven-layer.active {
+    opacity: 1;
+  }
+
+  .sixseven-text {
+    font-size: clamp(3rem, 12vw, 7rem);
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 0 40px #00c6ff, 0 0 80px #0072ff;
+    letter-spacing: 8px;
+    animation: sixSevenPulse 0.7s ease-in-out infinite alternate;
+  }
+
+  @keyframes sixSevenPulse {
+    0% {
+      transform: scale(1) rotate(-2deg);
+      filter: hue-rotate(0deg);
+    }
+    100% {
+      transform: scale(1.12) rotate(2deg);
+      filter: hue-rotate(40deg);
+    }
+  }
+
+  .sixseven-number {
+    position: absolute;
+    font-size: 4rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.15);
+    animation: floatNum 3s ease-in-out infinite;
+  }
+
+  @keyframes floatNum {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-30px); }
+  }
+
+  /* --- Бобёр --- */
+  .beaver-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .beaver-layer.active {
+    opacity: 1;
+  }
+
+  .beaver {
+    font-size: clamp(10rem, 40vw, 22rem);
+    animation: beaverAppear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    filter: drop-shadow(0 20px 40px rgba(0,0,0,0.5));
+  }
+
+  @keyframes beaverAppear {
+    0% {
+      transform: scale(0) rotate(-20deg);
+      opacity: 0;
+    }
+    60% {
+      transform: scale(1.15) rotate(5deg);
+    }
+    100% {
+      transform: scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+
+  .beaver-text {
+    position: absolute;
+    bottom: 12%;
+    font-size: 2rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    opacity: 0;
+    animation: fadeInUp 0.6s 0.4s forwards;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="title">
+      <span class="emoji">🎰</span>
+      <span>Рулетка</span>
+    </div>
+
+    <div class="display">
+      <div class="reel" id="reel"></div>
+    </div>
+
+    <button class="btn" id="spinBtn">
+      <span class="dice">🎲</span>
+      <span id="btnText">Крутить</span>
+    </button>
+  </div>
+
+  <!-- Слои эффектов -->
+  <div class="yogurt-layer" id="yogurtLayer"></div>
+  <div class="sixseven-layer" id="sixsevenLayer">
+    <div class="sixseven-text">SIX SEVEN</div>
+  </div>
+  <div class="beaver-layer" id="beaverLayer">
+    <div class="beaver">🦫</div>
+    <div class="beaver-text">БОБЁР</div>
+  </div>
+
+  <script>
+    // Путь исправлен: файл берется напрямую из папки рядом с index.html
+    const bgMusic = new Audio('grustinka.mp3');
+    bgMusic.loop = true; // Зацикливание песни
+    bgMusic.volume = 0.5; // Громкость 50%
+
+    const options = ['Спущенка', '67', 'бобёр'];
+    const reel = document.getElementById('reel');
+    const spinBtn = document.getElementById('spinBtn');
+    const btnText = document.getElementById('btnText');
+    const symbolHeight = 90;
+
+    let hasSpun = false;
+    let lastResult = null;
+    let isSpinning = false;
+
+    // Создаём длинную ленту (только 3 варианта)
+    function buildReel() {
+      let html = '';
+      for (let i = 0; i < 40; i++) {
+        options.forEach(opt => {
+          html += `<div class="symbol">${opt}</div>`;
+        });
+      }
+      reel.innerHTML = html;
+    }
+
+    buildReel();
+
+    let currentOffset = 0;
+    reel.style.transform = `translateY(0px)`;
+
+    // ========== ЭФФЕКТЫ ==========
+
+    function clearEffects() {
+      document.getElementById('yogurtLayer').innerHTML = '';
+      document.getElementById('sixsevenLayer').classList.remove('active');
+      document.getElementById('beaverLayer').classList.remove('active');
+    }
+
+    function playYogurt() {
+      clearEffects();
+      const layer = document.getElementById('yogurtLayer');
+
+      for (let i = 0; i < 8; i++) {
+        const splash = document.createElement('div');
+        splash.className = 'yogurt-splash';
+        splash.style.left = Math.random() * 100 + 'vw';
+        splash.style.top = Math.random() * 40 + 'vh';
+        splash.style.animationDelay = (Math.random() * 0.3) + 's';
+        layer.appendChild(splash);
+      }
+
+      for (let i = 0; i < 35; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'yogurt-drop';
+        const size = 12 + Math.random() * 28;
+        drop.style.width = size + 'px';
+        drop.style.height = size * 1.3 + 'px';
+        drop.style.left = Math.random() * 100 + 'vw';
+        drop.style.animationDuration = (1.8 + Math.random() * 2.2) + 's';
+        drop.style.animationDelay = (Math.random() * 0.8) + 's';
+        layer.appendChild(drop);
+      }
+
+      for (let i = 0; i < 12; i++) {
+        const drip = document.createElement('div');
+        drip.className = 'yogurt-drip';
+        drip.style.left = (5 + Math.random() * 90) + 'vw';
+        drip.style.top = '0';
+        drip.style.width = (10 + Math.random() * 16) + 'px';
+        drip.style.animationDelay = (0.3 + Math.random() * 1.2) + 's';
+        layer.appendChild(drip);
+      }
+    }
+
+    function playSixSeven() {
+      clearEffects();
+      const layer = document.getElementById('sixsevenLayer');
+      layer.classList.add('active');
+
+      layer.querySelectorAll('.sixseven-number').forEach(n => n.remove());
+      for (let i = 0; i < 12; i++) {
+        const num = document.createElement('div');
+        num.className = 'sixseven-number';
+        num.textContent = Math.random() > 0.5 ? '6' : '7';
+        num.style.left = Math.random() * 90 + 'vw';
+        num.style.top = Math.random() * 80 + 'vh';
+        num.style.animationDelay = Math.random() * 2 + 's';
+        num.style.fontSize = (2 + Math.random() * 3) + 'rem';
+        layer.appendChild(num);
+      }
+    }
+
+    function playBeaver() {
+      clearEffects();
+      document.getElementById('beaverLayer').classList.add('active');
+    }
+
+    function playEffect(result) {
+      if (result === 'Спущенка') playYogurt();
+      else if (result === '67') playSixSeven();
+      else if (result === 'бобёр') playBeaver();
+    }
+
+    // ========== КНОПКА ==========
+
+    spinBtn.addEventListener('click', () => {
+      // Запуск воспроизведения песни при первом клике
+      if (bgMusic.paused) {
+        bgMusic.play().catch(e => console.log('Ошибка воспроизведения аудио:', e));
+      }
+
+      if (isSpinning) return;
+
+      if (hasSpun) {
+        playEffect(lastResult);
+        return;
+      }
+
+      isSpinning = true;
+      spinBtn.disabled = true;
+
+      reel.style.transition = 'none';
+      reel.style.transform = `translateY(-${currentOffset}px)`;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const finalIndex = Math.floor(Math.random() * 3);
+          const cycles = 6 + Math.floor(Math.random() * 3);
+          const targetOffset = (cycles * options.length + finalIndex) * symbolHeight;
+          currentOffset = targetOffset;
+
+          reel.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.8, 0.25, 1)';
+          reel.style.transform = `translateY(-${targetOffset}px)`;
+
+          setTimeout(() => {
+            lastResult = options[finalIndex];
+            hasSpun = true;
+            isSpinning = false;
+            spinBtn.disabled = false;
+            btnText.textContent = 'Ещё раз';
+
+            playEffect(lastResult);
+          }, 4600);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
