@@ -171,17 +171,9 @@
   }
 
   @keyframes yogurtFall {
-    0% {
-      transform: translateY(-40px) scale(1);
-      opacity: 0.95;
-    }
-    70% {
-      opacity: 0.9;
-    }
-    100% {
-      transform: translateY(100vh) scale(1.1);
-      opacity: 0.7;
-    }
+    0% { transform: translateY(-40px) scale(1); opacity: 0.95; }
+    70% { opacity: 0.9; }
+    100% { transform: translateY(100vh) scale(1.1); opacity: 0.7; }
   }
 
   .yogurt-drip {
@@ -195,18 +187,9 @@
   }
 
   @keyframes dripGrow {
-    0% {
-      height: 0;
-      opacity: 0.9;
-    }
-    40% {
-      height: 80px;
-      opacity: 0.85;
-    }
-    100% {
-      height: 160px;
-      opacity: 0.5;
-    }
+    0% { height: 0; opacity: 0.9; }
+    40% { height: 80px; opacity: 0.85; }
+    100% { height: 160px; opacity: 0.5; }
   }
 
   .yogurt-splash {
@@ -220,14 +203,8 @@
   }
 
   @keyframes splash {
-    0% {
-      transform: scale(0.3);
-      opacity: 0.9;
-    }
-    100% {
-      transform: scale(2.5);
-      opacity: 0;
-    }
+    0% { transform: scale(0.3); opacity: 0.9; }
+    100% { transform: scale(2.5); opacity: 0; }
   }
 
   /* --- 67 (SIX SEVEN) --- */
@@ -258,14 +235,8 @@
   }
 
   @keyframes sixSevenPulse {
-    0% {
-      transform: scale(1) rotate(-2deg);
-      filter: hue-rotate(0deg);
-    }
-    100% {
-      transform: scale(1.12) rotate(2deg);
-      filter: hue-rotate(40deg);
-    }
+    0% { transform: scale(1) rotate(-2deg); filter: hue-rotate(0deg); }
+    100% { transform: scale(1.12) rotate(2deg); filter: hue-rotate(40deg); }
   }
 
   .sixseven-number {
@@ -306,17 +277,9 @@
   }
 
   @keyframes beaverAppear {
-    0% {
-      transform: scale(0) rotate(-20deg);
-      opacity: 0;
-    }
-    60% {
-      transform: scale(1.15) rotate(5deg);
-    }
-    100% {
-      transform: scale(1) rotate(0deg);
-      opacity: 1;
-    }
+    0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(5deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
   }
 
   .beaver-text {
@@ -330,15 +293,52 @@
     animation: fadeInUp 0.6s 0.4s forwards;
   }
 
+  /* --- Дом (Геолокация + Адрес) --- */
+  .house-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(10, 20, 30, 0.88);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .house-layer.active {
+    opacity: 1;
+  }
+
+  .house-icon {
+    font-size: clamp(6rem, 25vw, 12rem);
+    margin-bottom: 20px;
+    animation: houseBounce 0.8s ease infinite alternate;
+    filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6));
+  }
+
+  @keyframes houseBounce {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-15px); }
+  }
+
+  .house-text {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #fff;
+    max-width: 90%;
+    line-height: 1.5;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    white-space: pre-line;
+  }
+
   @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
@@ -369,27 +369,28 @@
     <div class="beaver">🦫</div>
     <div class="beaver-text">БОБЁР</div>
   </div>
+  <div class="house-layer" id="houseLayer">
+    <div class="house-icon">🏠</div>
+    <div class="house-text" id="locationText"></div>
+  </div>
 
   <script>
-    // Путь исправлен: файл берется напрямую из папки рядом с index.html
     const bgMusic = new Audio('grustinka.mp3');
-    bgMusic.loop = true; // Зацикливание песни
-    bgMusic.volume = 0.5; // Громкость 50%
+    bgMusic.loop = true;
+    bgMusic.volume = 0.5;
 
-    const options = ['Спущенка', '67', 'бобёр'];
+    const options = ['Спущенка', '67', 'бобёр', 'дом'];
     const reel = document.getElementById('reel');
     const spinBtn = document.getElementById('spinBtn');
     const btnText = document.getElementById('btnText');
     const symbolHeight = 90;
 
-    let hasSpun = false;
-    let lastResult = null;
     let isSpinning = false;
+    let currentPos = 0;
 
-    // Создаём длинную ленту (только 3 варианта)
     function buildReel() {
       let html = '';
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 50; i++) {
         options.forEach(opt => {
           html += `<div class="symbol">${opt}</div>`;
         });
@@ -399,15 +400,14 @@
 
     buildReel();
 
-    let currentOffset = 0;
-    reel.style.transform = `translateY(0px)`;
-
     // ========== ЭФФЕКТЫ ==========
 
     function clearEffects() {
       document.getElementById('yogurtLayer').innerHTML = '';
       document.getElementById('sixsevenLayer').classList.remove('active');
       document.getElementById('beaverLayer').classList.remove('active');
+      document.getElementById('houseLayer').classList.remove('active');
+      document.getElementById('locationText').textContent = '';
     }
 
     function playYogurt() {
@@ -469,54 +469,93 @@
       document.getElementById('beaverLayer').classList.add('active');
     }
 
+    function playHouse() {
+      clearEffects();
+      const houseLayer = document.getElementById('houseLayer');
+      const locationText = document.getElementById('locationText');
+      
+      houseLayer.classList.add('active');
+
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            
+            locationText.textContent = 'Определение адреса...';
+
+            try {
+              // Получаем адрес через API OpenStreetMap Nominatim
+              const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=ru`);
+              const data = await response.json();
+
+              if (data && data.display_name) {
+                locationText.textContent = `Ваш дом находится здесь:\n${data.display_name}`;
+              } else {
+                locationText.textContent = `Широта: ${lat.toFixed(5)}\nДолгота: ${lon.toFixed(5)}`;
+              }
+            } catch (e) {
+              // Если сервис недоступен, выводим точные координаты
+              locationText.textContent = `Широта: ${lat.toFixed(5)}\nДолгота: ${lon.toFixed(5)}`;
+            }
+          },
+          (error) => {
+            // При отказе в доступе надпись остается пустой
+            locationText.textContent = '';
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      }
+    }
+
     function playEffect(result) {
       if (result === 'Спущенка') playYogurt();
       else if (result === '67') playSixSeven();
       else if (result === 'бобёр') playBeaver();
+      else if (result === 'дом') playHouse();
     }
 
-    // ========== КНОПКА ==========
+    // ========== КНОПКА КРУТИТЬ ==========
 
     spinBtn.addEventListener('click', () => {
-      // Запуск воспроизведения песни при первом клике
       if (bgMusic.paused) {
-        bgMusic.play().catch(e => console.log('Ошибка воспроизведения аудио:', e));
+        bgMusic.play().catch(e => console.log('Ошибка аудио:', e));
       }
 
       if (isSpinning) return;
 
-      if (hasSpun) {
-        playEffect(lastResult);
-        return;
-      }
-
+      clearEffects();
       isSpinning = true;
       spinBtn.disabled = true;
 
-      reel.style.transition = 'none';
-      reel.style.transform = `translateY(-${currentOffset}px)`;
+      if (currentPos >= 20) {
+        currentPos = currentPos % options.length;
+        reel.style.transition = 'none';
+        reel.style.transform = `translateY(-${currentPos * symbolHeight}px)`;
+        reel.offsetHeight;
+      }
 
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          const finalIndex = Math.floor(Math.random() * 3);
-          const cycles = 6 + Math.floor(Math.random() * 3);
-          const targetOffset = (cycles * options.length + finalIndex) * symbolHeight;
-          currentOffset = targetOffset;
+      const targetIndex = Math.floor(Math.random() * options.length);
+      const rounds = 6;
 
-          reel.style.transition = 'transform 4.5s cubic-bezier(0.12, 0.8, 0.25, 1)';
-          reel.style.transform = `translateY(-${targetOffset}px)`;
+      let stepsToMove = (targetIndex - (currentPos % options.length));
+      if (stepsToMove <= 0) {
+        stepsToMove += options.length;
+      }
+      
+      const totalSteps = (rounds * options.length) + stepsToMove;
+      currentPos += totalSteps;
 
-          setTimeout(() => {
-            lastResult = options[finalIndex];
-            hasSpun = true;
-            isSpinning = false;
-            spinBtn.disabled = false;
-            btnText.textContent = 'Ещё раз';
+      reel.style.transition = 'transform 4s cubic-bezier(0.12, 0.8, 0.25, 1)';
+      reel.style.transform = `translateY(-${currentPos * symbolHeight}px)`;
 
-            playEffect(lastResult);
-          }, 4600);
-        });
-      });
+      setTimeout(() => {
+        isSpinning = false;
+        spinBtn.disabled = false;
+        btnText.textContent = 'Ещё раз';
+
+        playEffect(options[targetIndex]);
+      }, 4100);
     });
   </script>
 </body>
