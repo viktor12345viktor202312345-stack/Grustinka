@@ -566,11 +566,32 @@
       reel.style.transform = `translateY(-${currentPos * symbolHeight}px)`;
 
       setTimeout(() => {
-        isSpinning = false;
-        spinBtn.disabled = false;
-        btnText.textContent = 'Ещё раз';
+        const result = options[targetIndex];
+        playEffect(result);
 
-        playEffect(options[targetIndex]);
+        if (result === 'дом') {
+          // Задержка на 10 секунд при выпадении дома
+          let timeLeft = 10;
+          spinBtn.disabled = true;
+          isSpinning = true;
+          btnText.textContent = `Подождите (${timeLeft}с)`;
+
+          const timer = setInterval(() => {
+            timeLeft--;
+            if (timeLeft > 0) {
+              btnText.textContent = `Подождите (${timeLeft}с)`;
+            } else {
+              clearInterval(timer);
+              isSpinning = false;
+              spinBtn.disabled = false;
+              btnText.textContent = 'Ещё раз';
+            }
+          }, 1000);
+        } else {
+          isSpinning = false;
+          spinBtn.disabled = false;
+          btnText.textContent = 'Ещё раз';
+        }
       }, 4100);
     });
   </script>
